@@ -8,6 +8,7 @@ import javax.swing.JPanel
 
 class ImagePane : JPanel {
     var image: Image? = null
+    var zoomRatio: Double = 1.0
 
     constructor(image: Image) {
         this.image = image
@@ -24,14 +25,21 @@ class ImagePane : JPanel {
                 }
                 false
             }
-            var rect = computePaintRange(image!!, imageObserver)
-            if (rect != null) {
-                g.drawImage(image, rect.x, rect.y, rect.width, rect.height, imageObserver)
+            var destAndSrcRect = computePaintRange(image!!, imageObserver)
+            if (destAndSrcRect != null) {
+                var dest = destAndSrcRect[0]
+                var src = destAndSrcRect[1]
+                g.drawImage(
+                        image,
+                        dest.x, dest.y, dest.maxX.toInt(), dest.maxY.toInt(),
+                        src.x, src.y, src.maxX.toInt(), src.maxY.toInt(),
+                        imageObserver
+                )
             }
         }
     }
 
-    fun computePaintRange(image: Image, observer: ImageObserver): Rectangle? {
+    private fun computePaintRange(image: Image, observer: ImageObserver): Array<Rectangle>? {
         var imageWidth = image.getWidth(observer)
         if (imageWidth == -1) {
             return null
@@ -46,21 +54,42 @@ class ImagePane : JPanel {
 
         var paintRect = Rectangle()
 
-        //panel  width > height
+        //if panel width > height
         if (widthScore > heightScore) {
-            paintRect.height = this.height
             paintRect.width = heightScore / imageHeight
-            paintRect.x = Math.abs((this.width - paintRect.width) / 2)
+            paintRect.height = this.height
+            paintRect.x = (this.width - paintRect.width) / 2
             paintRect.y = 0
         } else {
-            paintRect.height = widthScore / imageWidth
             paintRect.width = this.width
+            paintRect.height = widthScore / imageWidth
             paintRect.x = 0
-            paintRect.y = Math.abs((this.height - paintRect.height) / 2)
+            paintRect.y = (this.height - paintRect.height) / 2
         }
 
-        return paintRect
+        var srcRect = Rectangle()
+
+        srcRect.width = (imageWidth / zoomRatio).toInt()
+        srcRect.height = (imageHeight / zoomRatio).toInt()
+        srcRect.x = (imageWidth - srcRect.width) / 2
+        srcRect.y = (imageHeight - srcRect.height) / 2
+
+        return arrayOf(paintRect, srcRect)
     }
 
+    fun zoomIn(ratio: Double) {
+        zoomRatio = ratio
+        repaint()
+    }
+
+    fun zoomIn() {
+        zoomRatio *= 2.0
+        repaint()
+    }
+
+    fun zoomOut() {
+        zoomRatio /= 2.0
+        repaint()
+    }
 
 }

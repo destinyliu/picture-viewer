@@ -21,14 +21,14 @@ fun main(args: Array<String>) {
     SwingUtilities.invokeLater {
         UIManager.setLookAndFeel(SubstanceGraphiteLookAndFeel())
 
-        var mainFrame = JFrame()
+        val mainFrame = JFrame()
         val contentPane = JPanel(BorderLayout())
-        var imagePane = ImagePane()
+        val imagePane = ImagePane()
         contentPane.add(imagePane, BorderLayout.CENTER)
         mainFrame.contentPane = contentPane
         mainFrame.setSize(400, 600)
         mainFrame.defaultCloseOperation = JFrame.EXIT_ON_CLOSE
-        var toolbar = createToolBar(mainFrame.rootPane.inputMap, mainFrame.rootPane.actionMap)
+        val toolbar = createToolBar(mainFrame.rootPane.inputMap, mainFrame.rootPane.actionMap, imagePane)
         contentPane.add(toolbar, BorderLayout.NORTH)
         mainFrame.isVisible = true
 
@@ -36,7 +36,7 @@ fun main(args: Array<String>) {
             override fun drop(dtde: DropTargetDropEvent) {
                 if (dtde.isDataFlavorSupported(javaFileListFlavor)) {
                     dtde.acceptDrop(DnDConstants.ACTION_MOVE)
-                    var files: List<File> = dtde.transferable.getTransferData(javaFileListFlavor) as List<File>
+                    val files: List<File> = dtde.transferable.getTransferData(javaFileListFlavor) as List<File>
                     System.out.print(files)
                     if (files.isNotEmpty()) {
                         imagePane.image = ImageIO.read(files[0])
@@ -50,19 +50,28 @@ fun main(args: Array<String>) {
 
 }
 
-fun createToolBar(inputMap: InputMap, actionMap: ActionMap): JToolBar {
-    var toolBar = JToolBar()
-    var zoomIn = object : AbstractAction("+") {
+fun createToolBar(inputMap: InputMap, actionMap: ActionMap, imagePane: ImagePane): JToolBar {
+    val toolBar = JToolBar()
+    val zoomIn = object : AbstractAction("+") {
         override fun actionPerformed(e: ActionEvent) {
-            System.out.println("zoom in event...")
+            imagePane.zoomIn()
         }
     }
 
-    inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_X, InputEvent.META_MASK), "image.zoomIn")
+    val zoomOut = object : AbstractAction("-") {
+        override fun actionPerformed(e: ActionEvent) {
+            imagePane.zoomOut()
+        }
+    }
+
+    inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_EQUALS, InputEvent.META_MASK), "image.zoomIn")
+    inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_MINUS, InputEvent.META_MASK), "image.zoomOut")
 
     actionMap.put("image.zoomIn", zoomIn)
+    actionMap.put("image.zoomOut", zoomOut)
 
     toolBar.add(JButton(zoomIn))
+    toolBar.add(JButton(zoomOut))
 
-    return toolBar;
+    return toolBar
 }
